@@ -1,0 +1,90 @@
+# Specification & Implementation Prompt: Dahab Tide & Marine Forecast
+
+Build a single, self-contained HTML file named `index.html` that serves as a live tide and marine weather forecast application for Dahab, Egypt.
+
+---
+
+## 1. Core Architecture & Constraints
+- **Self-Contained Single File**: Everything (HTML, CSS, JavaScript, inline SVGs) must reside in a single file (`index.html`).
+- **Zero External Dependencies**:
+  - No build step (no npm, webpack, vite, or compilers).
+  - No CDNs (no Tailwind CDN, Bootstrap, FontAwesome, Google Fonts, Chart.js, etc.).
+  - Use modern system font stacks (`system-ui`, `-apple-system`, `BlinkMacSystemFont`, `Segoe UI`, `Roboto`, sans-serif) and pure inline SVGs.
+- **Protocol**: Must run flawlessly when opened directly by double-clicking the file (`file://` protocol) in modern web browsers (Chrome, Firefox, Safari, Edge).
+
+---
+
+## 2. Data Sources & Resiliency
+- **Live Weather & Marine Conditions (Open-Meteo)**:
+  - Connect to Open-Meteo's free, keyless, CORS-enabled APIs (from [public-apis](https://github.com/public-apis/public-apis)):
+    - Dahab Coordinates: Latitude `28.5097° N`, Longitude `34.5136° E`.
+    - **Weather API** (`https://api.open-meteo.com/v1/forecast`):
+      - Live Air Temperature (°C)
+      - Relative Humidity (%)
+      - Wind Speed (km/h)
+      - Wind Direction (degrees °)
+      - Wind Gusts (km/h)
+    - **Marine API** (`https://marine-api.open-meteo.com/v1/marine`):
+      - Sea Surface / Water Temperature (°C)
+- **Tide Calculation & Modeling**:
+  - Implement a client-side harmonic astronomical tidal prediction model calibrated for the Gulf of Aqaba / Dahab micro-tidal regime (semi-diurnal tide with ~0.5m to 1.0m tidal range).
+  - Use lunar/solar astronomical tidal equations (e.g. principal lunar M2, principal solar S2, larger lunar elliptic N2, and luni-solar diurnal K1/O1 harmonic constituents adjusted for Red Sea / Dahab coordinates).
+  - Calculates continuous water height relative to Mean Lower Low Water (MLLW) or Mean Sea Level (MSL), automatically detecting High and Low tide peaks and troughs.
+  - Guarantees 100% offline tide functionality even if network connectivity is down.
+- **Refresh & Offline Handling**:
+  - **Manual Refresh Only**: Header includes an interactive "Refresh" button with click animation.
+  - **Timestamp**: Clearly displays "Last updated: [time]" formatted in the user's browser local timezone.
+  - **Network Failure Grace**: If the Open-Meteo fetch fails (e.g. offline), display a non-intrusive status warning while continuing to compute and render the astronomical tide curve without breaking.
+
+---
+
+## 3. Dashboard Features & Layout
+
+### A. Marine Meteorological Dashboard
+- **Standard Marine Meteorological Cards**:
+  - **Wind**: Wind speed in `km/h`, wind gust, wind direction in degrees + dynamic rotating compass arrow and cardinal direction (e.g. `NNE 25 km/h`).
+  - **Air Temperature**: In `°C` with high/low feels or daily bounds.
+  - **Sea Water Temperature**: In `°C` for marine/diving conditions.
+  - **Relative Humidity**: In `%`.
+- **Dahab Header Banner**:
+  - Location badge: Dahab, South Sinai, Egypt (`28.51° N, 34.51° E`).
+  - Current local browser date & time.
+  - Refresh button + Last updated status indicator.
+
+### B. Live Tide System with Selectable Views
+The interface must provide an intuitive tabbed view switcher allowing users to toggle between three distinct tide views:
+1. **View 1: 48-Hour Tidal Curve (Interactive Canvas/SVG)**:
+   - Continuous smooth harmonic wave spanning 24 hours past to 24 hours future (centered on the present).
+   - Prominent vertical "NOW" marker line with a pulsing indicator at the current water height.
+   - High Tide and Low Tide crests/troughs labeled with exact time (HH:MM) and height in meters (e.g., `▲ High 0.82m @ 14:20`).
+   - Interactive mouse hover / touch scrubber showing exact timestamp and predicted water level under cursor.
+   - Quick-glance badges: Countdown and height for the Next High Tide and Next Low Tide.
+2. **View 2: 7-Day Multi-Day Outlook**:
+   - Multi-day breakdown showing predicted High and Low tide peaks for each of the next 7 days.
+   - Day selector pills / daily cards with peak heights and timing.
+3. **View 3: 12-Hour Circular Dial / Gauge**:
+   - Nautical circular tide clock/gauge depicting the current water level within the tidal range.
+   - Clear state badge: "Rising / Flood" vs "Falling / Ebb".
+   - Countdown timer to the next peak or trough (e.g. "Next Low Tide in 1h 45m").
+
+---
+
+## 4. Visual Design & Aesthetics
+- **Deliberate & Polished Design**: Must look like a specialized marine navigation / oceanographic dashboard, not a generic bootstrap demo.
+- **Themes**:
+  - **Default Dark Marine Theme**: Deep sea slate and midnight navy backgrounds (`#0a1128`, `#0f1a30`, `#162238`), cyan/teal ocean accents (`#00f0ff`, `#00b4d8`, `#48cae4`), crisp typography, subtle borders, frosted glass card surfaces.
+  - **Daylight Coastal Light Theme**: Clean, high-contrast palette (crisp coastal whites, slate-blue borders, high readability under direct outdoor sunlight) toggled via an inline theme switch button.
+- **Responsiveness**: Fluid layout seamlessly adapting from mobile screens (360px+) to wide desktop monitors.
+
+---
+
+## 5. Verification & Hand-off Requirements
+Before concluding work:
+1. Thoroughly verify execution by opening the file directly via `file://` protocol.
+2. Validate that the Open-Meteo API requests succeed without CORS errors.
+3. Validate that switching between all 3 tide views works smoothly without layout distortion.
+4. Validate that the theme toggle switches palettes and persists preference.
+5. Provide a clear self-audit summary:
+   - **What was checked**: Tests and functional validations performed.
+   - **What was fixed**: Issues or edge cases discovered and resolved during implementation.
+   - **Known limitations**: Any remaining caveats or astronomical approximation tolerances.

@@ -1,0 +1,3180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Dahab Tide &amp; Marine Forecast | Live Gulf of Aqaba Oceanographic Dashboard</title>
+  <style>
+    /* ==========================================================================
+       CSS VARIABLES & THEME SYSTEM
+       ========================================================================== */
+    :root {
+      --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Dark Marine Theme (Default) */
+    :root[data-theme="dark"] {
+      --bg-page: #070e1c;
+      --bg-radial: radial-gradient(circle at 50% 0%, #0d1e3d 0%, #070e1c 70%);
+      --bg-surface: #0e192f;
+      --bg-surface-elevated: #142342;
+      --bg-surface-glass: rgba(14, 25, 47, 0.82);
+      --bg-card-subtle: rgba(20, 35, 66, 0.45);
+      --border-color: rgba(0, 240, 255, 0.16);
+      --border-color-hover: rgba(0, 240, 255, 0.38);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --accent-cyan: #00f0ff;
+      --accent-cyan-glow: rgba(0, 240, 255, 0.25);
+      --accent-teal: #00e5b7;
+      --accent-blue: #38bdf8;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-emerald: #10b981;
+
+      --chart-wave-line: #00f0ff;
+      --chart-wave-fill-top: rgba(0, 240, 255, 0.32);
+      --chart-wave-fill-bottom: rgba(0, 240, 255, 0.01);
+      --chart-grid: rgba(255, 255, 255, 0.08);
+      --chart-now-line: #f59e0b;
+      --chart-msl-line: rgba(56, 189, 248, 0.6);
+      --chart-bg: #0a1325;
+
+      --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.45);
+      --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.2);
+      --scrollbar-thumb: #1e293b;
+    }
+
+    /* Daylight Coastal Light Theme */
+    :root[data-theme="light"] {
+      --bg-page: #f1f5f9;
+      --bg-radial: radial-gradient(circle at 50% 0%, #e2e8f0 0%, #f1f5f9 70%);
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f8fafc;
+      --bg-surface-glass: rgba(255, 255, 255, 0.88);
+      --bg-card-subtle: rgba(241, 245, 249, 0.7);
+      --border-color: rgba(15, 23, 42, 0.14);
+      --border-color-hover: rgba(2, 132, 199, 0.45);
+      --border-subtle: rgba(15, 23, 42, 0.07);
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+
+      --accent-cyan: #0284c7;
+      --accent-cyan-glow: rgba(2, 132, 199, 0.2);
+      --accent-teal: #0d9488;
+      --accent-blue: #2563eb;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --accent-emerald: #059669;
+
+      --chart-wave-line: #0284c7;
+      --chart-wave-fill-top: rgba(2, 132, 199, 0.25);
+      --chart-wave-fill-bottom: rgba(2, 132, 199, 0.02);
+      --chart-grid: rgba(15, 23, 42, 0.09);
+      --chart-now-line: #d97706;
+      --chart-msl-line: rgba(13, 148, 136, 0.65);
+      --chart-bg: #f8fafc;
+
+      --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.07);
+      --shadow-glow: 0 0 15px rgba(2, 132, 199, 0.15);
+      --scrollbar-thumb: #cbd5e1;
+    }
+
+    /* ==========================================================================
+       GLOBAL RESET & BASE STYLES
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-stack);
+      background: var(--bg-page);
+      background-image: var(--bg-radial);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding-bottom: 3rem;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-page);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 4px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem;
+    }
+
+    /* ==========================================================================
+       HEADER & NAVIGATION BAR
+       ========================================================================== */
+    .header {
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
+      transition: var(--transition-smooth);
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #070e1c;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .brand-icon svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    .brand-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      line-height: 1.2;
+    }
+
+    .brand-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-weight: 500;
+    }
+
+    .badge-geo {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      color: var(--accent-cyan);
+      font-family: monospace;
+    }
+
+    .header-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .live-clock {
+      font-size: 1.05rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
+      letter-spacing: 0.02em;
+    }
+
+    .live-clock-date {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+      animation: pulse-dot 2s infinite;
+    }
+
+    .status-dot.offline {
+      background: var(--accent-amber);
+      box-shadow: 0 0 8px var(--accent-amber);
+      animation: none;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+    }
+
+    .btn-action {
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 0.5rem 0.9rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: var(--transition-smooth);
+      user-select: none;
+    }
+
+    .btn-action:hover {
+      background: var(--border-color-hover);
+      color: var(--text-primary);
+      border-color: var(--accent-cyan);
+      transform: translateY(-1px);
+    }
+
+    .btn-action:active {
+      transform: translateY(0);
+    }
+
+    .btn-action svg {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.5s ease;
+    }
+
+    .btn-action.spinning svg {
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Sub-header status bar */
+    .sub-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: -0.8rem;
+      margin-bottom: 1.25rem;
+      padding: 0 0.5rem;
+    }
+
+    .sub-bar a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+    }
+
+    /* ==========================================================================
+       PRIMARY OVERVIEW & QUICK TIDE RIBBON
+       ========================================================================== */
+    .overview-ribbon {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .ribbon-card {
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.15rem 1.25rem;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ribbon-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent-cyan);
+    }
+
+    .ribbon-card.high-tide::before { background: var(--accent-teal); }
+    .ribbon-card.low-tide::before { background: var(--accent-blue); }
+    .ribbon-card.moon-card::before { background: var(--accent-amber); }
+
+    .ribbon-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-color-hover);
+    }
+
+    .ribbon-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--accent-cyan);
+    }
+
+    .ribbon-icon-wrap svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .ribbon-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ribbon-label {
+      font-size: 0.74rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 0.2rem;
+    }
+
+    .ribbon-val {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.2;
+      display: flex;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+
+    .ribbon-val .unit {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .ribbon-sub {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .trend-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .trend-pill.rising {
+      background: rgba(0, 229, 183, 0.16);
+      color: var(--accent-teal);
+    }
+    .trend-pill.falling {
+      background: rgba(56, 189, 248, 0.16);
+      color: var(--accent-blue);
+    }
+
+    /* ==========================================================================
+       MARINE METEOROLOGICAL CARDS (4-GRID)
+       ========================================================================== */
+    /* Dashboard Panels Layout (Beneath Hero Chart) */
+    .dashboard-panels {
+      display: flex;
+      flex-direction: column;
+      gap: 2.25rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .panels-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panels-section-header {
+      margin-bottom: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .panels-group .overview-ribbon {
+      margin-bottom: 0;
+    }
+
+    .panels-group .meteo-grid {
+      margin-bottom: 0;
+    }
+
+    .spots-panel.panels-group {
+      margin-bottom: 0;
+    }
+
+    .section-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-left: 1.85rem;
+    }
+
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      letter-spacing: -0.01em;
+    }
+
+    .section-title svg {
+      width: 20px;
+      height: 20px;
+      color: var(--accent-cyan);
+      flex-shrink: 0;
+    }
+
+    .meteo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .meteo-card {
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.35rem;
+      box-shadow: var(--shadow-card);
+      transition: var(--transition-smooth);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .meteo-card:hover {
+      border-color: var(--border-color-hover);
+      transform: translateY(-2px);
+    }
+
+    .meteo-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .meteo-card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .meteo-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-cyan);
+    }
+
+    .meteo-card-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .meteo-main-val {
+      font-size: 2.15rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+
+    .meteo-main-val .unit {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .meteo-details {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .detail-row span:last-child {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Compass Rose in Wind Card */
+    .compass-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .compass-rose {
+      width: 72px;
+      height: 72px;
+      position: relative;
+      border-radius: 50%;
+      border: 2px dashed var(--border-color);
+      background: var(--bg-card-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .compass-needle {
+      width: 4px;
+      height: 52px;
+      position: absolute;
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: 50% 50%;
+    }
+
+    .compass-needle::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 24px solid var(--accent-rose);
+      transform: translateX(-3px);
+    }
+
+    .compass-needle::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 24px solid var(--text-secondary);
+      transform: translateX(-3px);
+    }
+
+    .compass-center-pivot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-primary);
+      position: absolute;
+      z-index: 2;
+    }
+
+    .compass-mark {
+      position: absolute;
+      font-size: 0.6rem;
+      font-weight: 800;
+      color: var(--text-muted);
+    }
+    .compass-mark.n { top: 2px; }
+    .compass-mark.s { bottom: 2px; }
+    .compass-mark.e { right: 4px; }
+    .compass-mark.w { left: 4px; }
+
+    /* ==========================================================================
+       HERO SECTION & CHART TELEMETRY AREA (TABBED SWITCHER)
+       ========================================================================== */
+    .hero-section,
+    .tide-section {
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 22px;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      margin-bottom: 2.25rem;
+      position: relative;
+      transition: var(--transition-smooth);
+    }
+
+    .hero-section::before,
+    .tide-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 80%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-section:hover,
+    .tide-section:hover {
+      border-color: var(--border-color-hover);
+    }
+
+    .hero-nav-bar,
+    .tab-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      padding: 1.25rem 1.75rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .hero-header-info,
+    .tab-header-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      margin-bottom: 0.15rem;
+    }
+
+    .hero-tag-pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 8px var(--accent-cyan);
+      animation: pulse-dot 2s infinite;
+    }
+
+    .hero-header-title,
+    .tab-header-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+
+    .hero-title-icon {
+      width: 24px;
+      height: 24px;
+      color: var(--accent-cyan);
+      flex-shrink: 0;
+    }
+
+    .hero-header-desc,
+    .tab-header-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    .tab-pills-wrap {
+      display: flex;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      padding: 0.3rem;
+      border-radius: 12px;
+      gap: 0.35rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 9px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: var(--transition-smooth);
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      background: var(--accent-cyan);
+      color: #070e1c;
+      font-weight: 700;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .tab-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .tab-pane {
+      display: none;
+      padding: 1.5rem;
+    }
+
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       VIEW 1: 48-HOUR TIDAL CURVE (INTERACTIVE CANVAS)
+       ========================================================================== */
+    .curve-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .curve-header-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .curve-badge-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .curve-badge {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .curve-badge strong {
+      color: var(--text-primary);
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 420px;
+      background: var(--chart-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    canvas#tideCurveCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* Floating Scrubber Tooltip */
+    .scrubber-tooltip {
+      position: absolute;
+      top: 15px;
+      pointer-events: none;
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--accent-cyan);
+      box-shadow: var(--shadow-card);
+      border-radius: 10px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      z-index: 50;
+      opacity: 0;
+      transform: translate(-50%, 0);
+      transition: opacity 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .scrubber-tooltip.visible {
+      opacity: 1;
+    }
+
+    .tooltip-time {
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 0.15rem;
+    }
+
+    .tooltip-height {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .tooltip-sub {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    /* Chart Legend */
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    /* ==========================================================================
+       VIEW 2: 7-DAY MULTI-DAY OUTLOOK
+       ========================================================================== */
+    .outlook-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.15rem;
+    }
+
+    .day-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 1.25rem;
+      transition: var(--transition-smooth);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .day-card:hover {
+      border-color: var(--accent-cyan);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .day-card.is-today {
+      border-color: var(--accent-cyan);
+      background: linear-gradient(180deg, var(--bg-card-subtle) 0%, var(--bg-surface-elevated) 100%);
+    }
+
+    .day-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.85rem;
+    }
+
+    .day-title-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .day-name {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .day-date {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .today-tag {
+      background: var(--accent-cyan);
+      color: #070e1c;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .moon-phase-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--bg-card-subtle);
+      padding: 0.45rem 0.65rem;
+      border-radius: 8px;
+      margin-bottom: 0.85rem;
+    }
+
+    .moon-phase-icon {
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+
+    .moon-phase-text {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      flex: 1;
+    }
+
+    .moon-phase-text strong {
+      color: var(--text-primary);
+    }
+
+    .tide-regime-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+    .tide-regime-badge.spring {
+      background: rgba(245, 158, 11, 0.18);
+      color: var(--accent-amber);
+    }
+    .tide-regime-badge.neap {
+      background: rgba(56, 189, 248, 0.18);
+      color: var(--accent-blue);
+    }
+    .tide-regime-badge.moderate {
+      background: rgba(16, 185, 129, 0.18);
+      color: var(--accent-emerald);
+    }
+
+    .day-events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .day-event-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      padding: 0.3rem 0.5rem;
+      background: var(--bg-surface);
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .event-type-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-weight: 600;
+    }
+
+    .event-type-wrap.high { color: var(--accent-teal); }
+    .event-type-wrap.low { color: var(--accent-blue); }
+
+    .event-time {
+      color: var(--text-secondary);
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    .event-height {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .day-range-summary {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 0.6rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ==========================================================================
+       VIEW 3: 12-HOUR CIRCULAR DIAL / NAUTICAL TIDE CLOCK
+       ========================================================================== */
+    .dial-view-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    @media (max-width: 860px) {
+      .dial-view-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .dial-instrument-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .nautical-clock-svg {
+      width: 100%;
+      max-width: 380px;
+      height: auto;
+      filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.4));
+    }
+
+    .dial-metrics-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .dial-readout-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+
+    .dial-readout-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+    }
+
+    .range-bar-track {
+      width: 100%;
+      height: 12px;
+      background: var(--bg-surface);
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 0.6rem 0;
+      border: 1px solid var(--border-subtle);
+      position: relative;
+    }
+
+    .range-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal));
+      border-radius: 6px;
+      transition: width 0.8s ease;
+      width: 50%;
+    }
+
+    .range-bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .twelfths-guide {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 0.78rem;
+    }
+
+    .twelfths-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .twelfths-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.35rem;
+      margin-top: 0.6rem;
+      text-align: center;
+    }
+
+    .twelfth-box {
+      background: var(--bg-surface);
+      padding: 0.35rem 0.2rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
+    .twelfth-box.active {
+      background: var(--accent-cyan);
+      color: #070e1c;
+      font-weight: 700;
+      border-color: var(--accent-cyan);
+    }
+
+    /* ==========================================================================
+       DAHAB LOCAL SPOT & MARINE GUIDE PANEL
+       ========================================================================== */
+    .spots-panel {
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 2rem;
+    }
+
+    .spots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .spot-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    .spot-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .spot-name svg {
+      width: 16px;
+      height: 16px;
+      color: var(--accent-cyan);
+    }
+
+    .spot-desc {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* ==========================================================================
+       FOOTER
+       ========================================================================== */
+    .footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      padding: 1.5rem 0 0.5rem 0;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .footer a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+    }
+
+    /* ==========================================================================
+       RESPONSIVE BREAKPOINTS
+       ========================================================================== */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+      }
+      .brand-section {
+        justify-content: space-between;
+      }
+      .header-actions {
+        justify-content: space-between;
+      }
+      .overview-ribbon {
+        grid-template-columns: 1fr;
+      }
+      .canvas-wrap {
+        height: 330px;
+      }
+      .hero-nav-bar,
+      .tab-nav-bar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+        gap: 1rem;
+      }
+      .hero-header-title {
+        font-size: 1.15rem;
+      }
+      .tab-pills-wrap {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .tab-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 0.45rem 0.5rem;
+        font-size: 0.75rem;
+      }
+      .section-subtitle {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- ====================================================================
+         HEADER & STATUS BAR
+         ==================================================================== -->
+    <header class="header">
+      <div class="brand-section">
+        <div class="brand-icon" aria-hidden="true">
+          <!-- Wave / Anchor Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12c3-4 6-4 9 0 3 4 6 4 9 0" />
+            <path d="M2 17c3-4 6-4 9 0 3 4 6 4 9 0" />
+            <circle cx="11" cy="6" r="2" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">DAHAB TIDE</h1>
+          <div class="brand-subtitle">
+            Gulf of Aqaba &bull; South Sinai, Egypt
+            <span class="badge-geo">28.51&deg;N 34.51&deg;E</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="live-clock" id="liveClockDisplay">--:--:--</div>
+        <div class="live-clock-date" id="liveDateDisplay">Loading local date...</div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-pill" id="syncStatusPill" title="Connection status with Open-Meteo">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Connecting...</span>
+        </div>
+
+        <button class="btn-action" id="refreshBtn" title="Manual refresh of live weather &amp; tide recalculation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          <span>Refresh</span>
+        </button>
+
+        <button class="btn-action" id="themeToggleBtn" title="Toggle Dark Marine / Daylight Coastal Theme">
+          <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Moon / Sun icon dynamic -->
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+          <span id="themeBtnText">Theme</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="sub-bar">
+      <div>
+        Last synchronized: <strong id="lastUpdatedTimestamp">Just now</strong>
+      </div>
+      <div>
+        Harmonic Engine: <strong>Red Sea Micro-tidal M2/S2/N2 Model</strong> &bull; API: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         HERO SECTION: ASTRONOMICAL TIDE CHART & INTERACTIVE TELEMETRY
+         ==================================================================== -->
+    <section class="hero-section tide-section" id="heroSection" aria-label="Dahab Tide Hero Forecast">
+      
+      <!-- Hero Header & View Switcher Navigation -->
+      <div class="hero-nav-bar tab-nav-bar">
+        <div class="hero-header-info tab-header-info">
+          <div class="hero-tag">
+            <span class="hero-tag-pulse"></span>
+            Primary Oceanographic Telemetry
+          </div>
+          <h2 class="hero-header-title tab-header-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="hero-title-icon">
+              <path d="M3 12h18M3 6h18M3 18h18"/>
+            </svg>
+            Dahab Astronomical Tide Forecast
+          </h2>
+          <div class="hero-header-desc tab-header-desc">
+            Gulf of Aqaba calibrated harmonic curve &bull; 0.50m &ndash; 1.05m micro-tidal range &bull; Fully operational offline
+          </div>
+        </div>
+
+        <div class="tab-pills-wrap" role="tablist">
+          <button class="tab-btn active" id="tabBtn1" role="tab" aria-selected="true" aria-controls="pane1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 18l6-6 4 4 8-8"/>
+            </svg>
+            <span>48h Curve</span>
+          </button>
+
+          <button class="tab-btn" id="tabBtn2" role="tab" aria-selected="false" aria-controls="pane2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span>7-Day Outlook</span>
+          </button>
+
+          <button class="tab-btn" id="tabBtn3" role="tab" aria-selected="false" aria-controls="pane3">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>12h Nautical Dial</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================================================================
+           TAB PANE 1: 48-HOUR TIDAL CURVE
+           ================================================================== -->
+      <div class="tab-pane active" id="pane1" role="tabpanel">
+        <div class="curve-container">
+          
+          <div class="curve-header-badges">
+            <div class="curve-badge-group">
+              <div class="curve-badge">
+                <span>Center Marker:</span>
+                <strong style="color: var(--chart-now-line);">NOW (Real-Time)</strong>
+              </div>
+              <div class="curve-badge">
+                <span>Mean Sea Level:</span>
+                <strong style="color: var(--accent-blue);">0.58 m MSL</strong>
+              </div>
+              <div class="curve-badge">
+                <span>Tidal Range:</span>
+                <strong id="curveRangeSummary">0.60 m</strong>
+              </div>
+            </div>
+
+            <div style="font-size: 0.78rem; color: var(--text-secondary);">
+              &larr; Drag or hover cursor over graph to scrub water level &rarr;
+            </div>
+          </div>
+
+          <div class="canvas-wrap" id="canvasWrap">
+            <canvas id="tideCurveCanvas"></canvas>
+            
+            <!-- Hover Scrubber Tooltip -->
+            <div class="scrubber-tooltip" id="scrubberTooltip">
+              <div class="tooltip-time" id="tooltipTime">Today, 15:45</div>
+              <div class="tooltip-height"><span id="tooltipHeightVal">0.61</span> <span style="font-size: 0.8rem; font-weight: normal;">meters</span></div>
+              <div class="tooltip-sub" id="tooltipSub">Rising (+0.08 m/h) &bull; in 2h</div>
+            </div>
+          </div>
+
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-color" style="background: var(--chart-wave-line);"></span>
+              <span>Harmonic Water Level</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background: var(--chart-now-line);"></span>
+              <span>Present Moment (NOW)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background: var(--chart-msl-line); height: 2px;"></span>
+              <span>Mean Sea Level (0.58m)</span>
+            </div>
+            <div class="legend-item">
+              <span style="color: var(--accent-teal); font-weight: bold;">&blacktriangle;</span>
+              <span>High Tide Peaks</span>
+            </div>
+            <div class="legend-item">
+              <span style="color: var(--accent-blue); font-weight: bold;">&blacktriangledown;</span>
+              <span>Low Tide Troughs</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==================================================================
+           TAB PANE 2: 7-DAY OUTLOOK
+           ================================================================== -->
+      <div class="tab-pane" id="pane2" role="tabpanel">
+        <div style="margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--text-secondary);">
+          Daily astronomical tide extrema (High and Low water peaks) computed for Dahab coordinates over the next 7 days, including lunar phase progressions.
+        </div>
+        
+        <div class="outlook-grid" id="outlookGrid">
+          <!-- Dynamically populated by JS -->
+        </div>
+
+        <!-- Optional Day Detail Expansion -->
+        <div id="dayDetailPanel" style="display: none; margin-top: 1.5rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+            <div style="font-weight: 700; font-size: 1rem;" id="detailDayTitle">Hourly Breakdown</div>
+            <button class="btn-action" id="closeDetailBtn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">Close</button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left;" id="detailHourlyTable">
+              <!-- Filled on click -->
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================================================================
+           TAB PANE 3: 12-HOUR CIRCULAR DIAL / NAUTICAL TIDE CLOCK
+           ================================================================== -->
+      <div class="tab-pane" id="pane3" role="tabpanel">
+        <div class="dial-view-layout">
+          
+          <!-- Circular Tide Gauge Instrument -->
+          <div class="dial-instrument-wrap">
+            <svg class="nautical-clock-svg" id="nauticalClockSvg" viewBox="0 0 400 400" aria-label="Nautical Tide Clock">
+              <defs>
+                <!-- Instrument gradients -->
+                <radialGradient id="dialBgGrad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#0e1b36" />
+                  <stop offset="80%" stop-color="#081022" />
+                  <stop offset="100%" stop-color="#040812" />
+                </radialGradient>
+                <linearGradient id="brassBezel" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00f0ff" />
+                  <stop offset="50%" stop-color="#0284c7" />
+                  <stop offset="100%" stop-color="#00e5b7" />
+                </linearGradient>
+                <linearGradient id="floodGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                  <stop offset="0%" stop-color="rgba(0, 229, 183, 0.05)" />
+                  <stop offset="100%" stop-color="rgba(0, 229, 183, 0.25)" />
+                </linearGradient>
+                <linearGradient id="ebbGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="rgba(56, 189, 248, 0.25)" />
+                  <stop offset="100%" stop-color="rgba(56, 189, 248, 0.05)" />
+                </linearGradient>
+              </defs>
+
+              <!-- Outer Bezel Ring -->
+              <circle cx="200" cy="200" r="192" fill="none" stroke="url(#brassBezel)" stroke-width="4" opacity="0.6"/>
+              <circle cx="200" cy="200" r="185" fill="url(#dialBgGrad)" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+
+              <!-- Semi-circles for Flood (left) and Ebb (right) -->
+              <!-- Ebb Sector (0 to 180 deg, right side) -->
+              <path d="M 200 25 A 175 175 0 0 1 200 375 Z" fill="url(#ebbGrad)" />
+              <!-- Flood Sector (180 to 360 deg, left side) -->
+              <path d="M 200 375 A 175 175 0 0 1 200 25 Z" fill="url(#floodGrad)" />
+
+              <!-- Inner Dial Track -->
+              <circle cx="200" cy="200" r="145" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+              <!-- Sector Label Texts -->
+              <text x="340" y="205" fill="#38bdf8" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1">FALLING (EBB) &searr;</text>
+              <text x="60" y="205" fill="#00e5b7" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1">&nearr; RISING (FLOOD)</text>
+
+              <!-- Top & Bottom Major Marks -->
+              <g transform="translate(200, 52)">
+                <text x="0" y="0" fill="#00f0ff" font-size="15" font-weight="900" text-anchor="middle" letter-spacing="1.5">HIGH TIDE &blacktriangle;</text>
+                <text x="0" y="14" fill="#94a3b8" font-size="9" text-anchor="middle">PEAK HIGH WATER</text>
+              </g>
+
+              <g transform="translate(200, 355)">
+                <text x="0" y="0" fill="#38bdf8" font-size="15" font-weight="900" text-anchor="middle" letter-spacing="1.5">LOW TIDE &blacktriangledown;</text>
+                <text x="0" y="14" fill="#94a3b8" font-size="9" text-anchor="middle">TROUGH LOW WATER</text>
+              </g>
+
+              <!-- Hourly Ticks (12 tidal hours) -->
+              <g id="dialTicksGroup" stroke="rgba(255,255,255,0.3)" stroke-width="2">
+                <!-- Ticks injected or defined here -->
+              </g>
+
+              <!-- Center Hub Details -->
+              <circle cx="200" cy="200" r="75" fill="#070e1c" stroke="rgba(0, 240, 255, 0.3)" stroke-width="2"/>
+              <text x="200" y="185" fill="#f1f5f9" font-size="28" font-weight="900" text-anchor="middle" id="dialCenterHeight">0.61</text>
+              <text x="200" y="202" fill="#94a3b8" font-size="11" font-weight="700" text-anchor="middle">METERS</text>
+              <text x="200" y="222" fill="#00f0ff" font-size="11" font-weight="800" text-anchor="middle" id="dialCenterTrend">RISING</text>
+
+              <!-- Rotating Needle -->
+              <g id="dialNeedleGroup" transform="rotate(0, 200, 200)" style="transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                <!-- Needle body pointing UP to 0 deg -->
+                <polygon points="196,200 200,45 204,200 200,225" fill="#f59e0b" filter="drop-shadow(0 0 6px rgba(245, 158, 11, 0.6))"/>
+                <circle cx="200" cy="45" r="4" fill="#ffffff" />
+                <circle cx="200" cy="200" r="10" fill="#f59e0b" stroke="#ffffff" stroke-width="2"/>
+              </g>
+            </svg>
+          </div>
+
+          <!-- Auxiliary Metrics & Explanations -->
+          <div class="dial-metrics-wrap">
+            
+            <div class="dial-readout-card">
+              <div class="dial-readout-title">Current Position in Tidal Range</div>
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span style="font-size: 1.5rem; font-weight: 800;" id="dialPercentVal">58%</span>
+                <span style="font-size: 0.8rem; color: var(--text-secondary);" id="dialRangeBounds">Low 0.33m &rarr; High 0.89m</span>
+              </div>
+              <div class="range-bar-track">
+                <div class="range-bar-fill" id="dialRangeFill"></div>
+              </div>
+              <div class="range-bar-labels">
+                <span>0% (Low Water)</span>
+                <span>50% (Mid-Tide)</span>
+                <span>100% (High Water)</span>
+              </div>
+            </div>
+
+            <div class="dial-readout-card">
+              <div class="dial-readout-title">Tidal State &amp; Time to Next Extremes</div>
+              <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                  <span style="color: var(--accent-teal); font-weight: 700;">&blacktriangle; Next High Tide:</span>
+                  <strong id="dialNextHigh">in 2h 45m (0.89m)</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                  <span style="color: var(--accent-blue); font-weight: 700;">&blacktriangledown; Next Low Tide:</span>
+                  <strong id="dialNextLow">in 8h 35m (0.33m)</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                  <span style="color: var(--text-secondary);">Vertical Water Velocity:</span>
+                  <strong id="dialVelocity">+0.08 m/hour</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rule of Twelfths Marine Guide -->
+            <div class="twelfths-guide">
+              <div class="twelfths-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; color: var(--accent-amber);">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                Marine Rule of Twelfths (Flow Distribution)
+              </div>
+              <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.4;">
+                In semi-diurnal tides, water height changes by 1/12th in the 1st hour, 2/12ths in the 2nd, 3/12ths in 3rd &amp; 4th (maximum flow current), 2/12ths in 5th, and 1/12th in 6th.
+              </div>
+              <div class="twelfths-grid" id="twelfthsGrid">
+                <div class="twelfth-box" id="twelfth-1">Hr 1<br><strong>1/12</strong></div>
+                <div class="twelfth-box" id="twelfth-2">Hr 2<br><strong>2/12</strong></div>
+                <div class="twelfth-box" id="twelfth-3">Hr 3<br><strong>3/12</strong></div>
+                <div class="twelfth-box" id="twelfth-4">Hr 4<br><strong>3/12</strong></div>
+                <div class="twelfth-box" id="twelfth-5">Hr 5<br><strong>2/12</strong></div>
+                <div class="twelfth-box" id="twelfth-6">Hr 6<br><strong>1/12</strong></div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ====================================================================
+         DASHBOARD PANELS (BENEATH HERO CHART)
+         ==================================================================== -->
+    <div class="dashboard-panels" id="dashboardPanels">
+
+      <!-- ==================================================================
+           PANEL GROUP 1: LIVE TIDAL TELEMETRY & EXTRAMA
+           ================================================================== -->
+      <section class="panels-group" aria-label="Tidal Telemetry & Extrema">
+        <div class="panels-section-header">
+          <h2 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            Live Tidal Telemetry &amp; Lunar Cycle
+          </h2>
+          <div class="section-subtitle">Real-time water height, vertical rate, upcoming tidal extrema, and astronomical phase</div>
+        </div>
+
+        <div class="overview-ribbon" aria-label="Quick Tide Overview">
+      
+      <!-- Current Tide Level -->
+      <div class="ribbon-card">
+        <div class="ribbon-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+        </div>
+        <div class="ribbon-content">
+          <div class="ribbon-label">Current Water Level</div>
+          <div class="ribbon-val">
+            <span id="ribbonCurrentHeight">0.61</span>
+            <span class="unit">meters</span>
+          </div>
+          <div class="ribbon-sub">
+            <span class="trend-pill rising" id="ribbonTrendPill">
+              <span id="ribbonTrendIcon">&blacktriangle;</span>
+              <span id="ribbonTrendText">Rising (+0.08 m/h)</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next High Tide -->
+      <div class="ribbon-card high-tide">
+        <div class="ribbon-icon-wrap" style="color: var(--accent-teal);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 15l-6-6-6 6" />
+          </svg>
+        </div>
+        <div class="ribbon-content">
+          <div class="ribbon-label">Next High Tide</div>
+          <div class="ribbon-val">
+            <span id="ribbonNextHighHeight">0.89</span>
+            <span class="unit">m</span>
+          </div>
+          <div class="ribbon-sub" id="ribbonNextHighTime">
+            in 2h 45m &bull; 15:34
+          </div>
+        </div>
+      </div>
+
+      <!-- Next Low Tide -->
+      <div class="ribbon-card low-tide">
+        <div class="ribbon-icon-wrap" style="color: var(--accent-blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
+        <div class="ribbon-content">
+          <div class="ribbon-label">Next Low Tide</div>
+          <div class="ribbon-val">
+            <span id="ribbonNextLowHeight">0.33</span>
+            <span class="unit">m</span>
+          </div>
+          <div class="ribbon-sub" id="ribbonNextLowTime">
+            in 8h 35m &bull; 21:24
+          </div>
+        </div>
+      </div>
+
+      <!-- Astronomical Lunar & Tidal Regime -->
+      <div class="ribbon-card moon-card">
+        <div class="ribbon-icon-wrap" style="color: var(--accent-amber);">
+          <span style="font-size: 1.5rem;" id="ribbonMoonEmoji">&#127762;</span>
+        </div>
+        <div class="ribbon-content">
+          <div class="ribbon-label">Lunar &amp; Tidal Phase</div>
+          <div class="ribbon-val" style="font-size: 1.25rem;">
+            <span id="ribbonMoonName">Waxing Crescent</span>
+          </div>
+          <div class="ribbon-sub" id="ribbonRegimeSub">
+            Spring Tide (Strong Exchange)
+          </div>
+        </div>
+      </div>
+
+    </div>
+      </section>
+
+      <!-- ==================================================================
+           PANEL GROUP 2: LIVE MARINE METEOROLOGICAL CONDITIONS
+           ================================================================== -->
+      <section class="panels-group" aria-label="Marine Weather Conditions">
+        <div class="panels-section-header">
+          <h2 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M8 12h8M12 8v8" />
+            </svg>
+            Live Marine Weather &amp; Coastal Conditions &bull; Dahab Coast
+          </h2>
+          <div class="section-subtitle">Real-time wind velocity &amp; direction, thermal comfort, swell parameters, and air humidity</div>
+        </div>
+
+        <div class="meteo-grid" aria-label="Marine Weather Cards">
+      
+      <!-- Card 1: Wind & Gusts with Compass -->
+      <div class="meteo-card">
+        <div>
+          <div class="meteo-card-header">
+            <div class="meteo-card-title">Wind &amp; Gusts</div>
+            <div class="meteo-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="meteo-main-val">
+            <span id="windSpeedVal">--</span>
+            <span class="unit">km/h</span>
+          </div>
+
+          <div class="compass-container">
+            <div class="compass-rose">
+              <span class="compass-mark n">N</span>
+              <span class="compass-mark s">S</span>
+              <span class="compass-mark e">E</span>
+              <span class="compass-mark w">W</span>
+              <div class="compass-needle" id="compassNeedle"></div>
+              <div class="compass-center-pivot"></div>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 1.15rem; color: var(--text-primary);" id="windDirText">-- &bull; --&deg;</div>
+              <div style="font-size: 0.76rem; color: var(--text-secondary);" id="beaufortText">Calm</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="meteo-details">
+          <div class="detail-row">
+            <span>Peak Wind Gusts</span>
+            <span id="windGustVal">-- km/h</span>
+          </div>
+          <div class="detail-row">
+            <span>Kitesurf / Windsurf</span>
+            <span id="windSportSuitability" style="color: var(--accent-cyan);">Checking...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Air Temperature -->
+      <div class="meteo-card">
+        <div>
+          <div class="meteo-card-header">
+            <div class="meteo-card-title">Air Temperature</div>
+            <div class="meteo-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="meteo-main-val">
+            <span id="airTempVal">--</span>
+            <span class="unit">&deg;C</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary);" id="tempDailyBounds">
+            Today's bounds: Min --&deg;C &bull; Max --&deg;C
+          </div>
+        </div>
+
+        <div class="meteo-details">
+          <div class="detail-row">
+            <span>Dahab Microclimate</span>
+            <span>Arid Sinai Coastal</span>
+          </div>
+          <div class="detail-row">
+            <span>Comfort Level</span>
+            <span id="thermalComfort">Warm &bull; Sunny</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Sea Water Temperature & Marine Swell -->
+      <div class="meteo-card">
+        <div>
+          <div class="meteo-card-header">
+            <div class="meteo-card-title">Sea Surface Temp</div>
+            <div class="meteo-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12c3-4 6-4 9 0 3 4 6 4 9 0M2 17c3-4 6-4 9 0 3 4 6 4 9 0"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="meteo-main-val">
+            <span id="seaTempVal">--</span>
+            <span class="unit">&deg;C</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary);" id="seaConditionDesc">
+            Red Sea Coastal Waters
+          </div>
+        </div>
+
+        <div class="meteo-details">
+          <div class="detail-row">
+            <span>Significant Wave Height</span>
+            <span id="waveHeightVal">-- m</span>
+          </div>
+          <div class="detail-row">
+            <span>Wave Period</span>
+            <span id="wavePeriodVal">-- s</span>
+          </div>
+          <div class="detail-row">
+            <span>Diving Suit Recommendation</span>
+            <span id="wetsuitRecommendation" style="color: var(--accent-teal);">3mm or shorty</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Relative Humidity & Barometer -->
+      <div class="meteo-card">
+        <div>
+          <div class="meteo-card-header">
+            <div class="meteo-card-title">Relative Humidity</div>
+            <div class="meteo-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="meteo-main-val">
+            <span id="humidityVal">--</span>
+            <span class="unit">%</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary);" id="dewPointDesc">
+            Estimated Dew Point: --&deg;C
+          </div>
+        </div>
+
+        <div class="meteo-details">
+          <div class="detail-row">
+            <span>Air Dryness</span>
+            <span id="airDrynessVal">Dry Desert Coast</span>
+          </div>
+          <div class="detail-row">
+            <span>Visibility</span>
+            <span>Exceptional (&gt;10 km)</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+      </section>
+
+      <!-- ==================================================================
+           PANEL GROUP 3: DAHAB COASTAL MARINE & REEF ADVICE
+           ================================================================== -->
+      <section class="spots-panel panels-group" aria-label="Dahab Marine Spots Guidance">
+        <div class="panels-section-header">
+          <h2 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            Dahab Marine Spots &bull; Tide &amp; Wind Guidance
+          </h2>
+          <div class="section-subtitle">Local reef entry clearance, sandbar exposures, and tidal drift navigation advice</div>
+        </div>
+
+      <div class="spots-grid">
+        <div class="spot-card">
+          <div class="spot-name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/></svg>
+            Dahab Lagoon &bull; Kitesurf &amp; Windsurf
+          </div>
+          <div class="spot-desc">
+            At High Tide (&gt;0.75m), the inner lagoon offers deep butter-flat water ideal for all levels. At Low Tide (&lt;0.35m), outer sandbars emerge, creating speed strips while shallow reef flats require caution when launching.
+          </div>
+        </div>
+
+        <div class="spot-card">
+          <div class="spot-name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+            Lighthouse &amp; Eel Garden Reefs
+          </div>
+          <div class="spot-desc">
+            Fringing coral reef entry. During Low Tide, cross only via marked sandy pathways to protect fragile corals. During High Tide, entry over the reef crest has comfortable clearance for freedivers and snorkelers.
+          </div>
+        </div>
+
+        <div class="spot-card">
+          <div class="spot-name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Blue Hole &amp; The Canyon
+          </div>
+          <div class="spot-desc">
+            Open deep-water drop-offs. Tides affect surface chop and mild north-south littoral drift along the outer wall. Tidal transitions (slack water) offer calmest entry conditions at the Bells chimney.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    </div>
+
+    <!-- ====================================================================
+         FOOTER
+         ==================================================================== -->
+    <footer class="footer">
+      <div>
+        <strong>Dahab Tide &amp; Marine Forecast</strong> &bull; Client-side Harmonic Astronomical Tidal Prediction Engine
+      </div>
+      <div>
+        Calibrated for Gulf of Aqaba micro-tidal dynamics &bull; Latitude 28.5097&deg;N, Longitude 34.5136&deg;E
+      </div>
+      <div>
+        Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo Free Weather &amp; Marine API</a> &bull; Zero external libraries &bull; Runs 100% locally via <code>file://</code>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ====================================================================
+       JAVASCRIPT ARCHITECTURE & HARMONIC ENGINE
+       ==================================================================== -->
+  <script>
+    /**
+     * Dahab Tide & Marine Forecast Engine
+     * Self-contained client-side application with zero external dependencies.
+     */
+
+    // Astronomical Harmonic Constituents for Dahab / Gulf of Aqaba.
+    // Gulf of Aqaba is a semi-diurnal micro-tidal regime forced by the Red Sea proper.
+    // Tidal range is typically 0.50m - 1.05m.
+    const TIDE_CONSTITUENTS = [
+      { name: 'M2', speed: 28.9841042, amp: 0.280, phaseLag: 65.0 }, // Principal lunar semidiurnal (~12.42h)
+      { name: 'S2', speed: 30.0000000, amp: 0.100, phaseLag: 65.0 }, // Principal solar semidiurnal (12.00h)
+      { name: 'N2', speed: 28.4397295, amp: 0.055, phaseLag: 40.0 }, // Larger lunar elliptic semidiurnal (~12.66h)
+      { name: 'K1', speed: 15.0410686, amp: 0.040, phaseLag: 110.0 }, // Luni-solar diurnal (~23.93h)
+      { name: 'O1', speed: 13.9430356, amp: 0.030, phaseLag: 85.0 },  // Principal lunar diurnal (~25.82h)
+      { name: 'M4', speed: 57.9682084, amp: 0.015, phaseLag: 130.0 }  // Shallow water overtide (~6.21h)
+    ];
+
+    const MEAN_SEA_LEVEL = 0.58;
+    const REF_NEW_MOON_MS = Date.UTC(2024, 0, 11, 11, 57, 0);
+    const SYNODIC_MONTH_MS = 29.530588853 * 86400 * 1000;
+
+    const state = {
+      theme: 'dark',
+      activeTab: '1',
+      lastUpdated: null,
+      isOnline: false,
+      now: new Date(),
+      weather: {
+        airTemp: null,
+        tempMax: null,
+        tempMin: null,
+        humidity: null,
+        windSpeed: null,
+        windDir: null,
+        windGusts: null,
+        seaTemp: null,
+        waveHeight: null,
+        wavePeriod: null
+      },
+      tide: {
+        currentHeight: 0,
+        rate: 0,
+        isRising: true,
+        nextHigh: null,
+        nextLow: null,
+        extrema48h: [],
+        extrema7d: []
+      }
+    };
+
+    function getTideHeightAt(date) {
+      const elapsedHours = (date.getTime() - REF_NEW_MOON_MS) / (1000 * 3600);
+      let calculatedHeight = MEAN_SEA_LEVEL;
+      for (let i = 0; i < TIDE_CONSTITUENTS.length; i++) {
+        const constituent = TIDE_CONSTITUENTS[i];
+        const angleRadians = (constituent.speed * elapsedHours - constituent.phaseLag) * (Math.PI / 180);
+        calculatedHeight += constituent.amp * Math.cos(angleRadians);
+      }
+      return calculatedHeight;
+    }
+
+    function getTideRateAt(date) {
+      const epsilonMs = 60 * 1000;
+      const heightAfter = getTideHeightAt(new Date(date.getTime() + epsilonMs));
+      const heightBefore = getTideHeightAt(new Date(date.getTime() - epsilonMs));
+      return (heightAfter - heightBefore) / (2 * epsilonMs / (3600 * 1000));
+    }
+
+    function bisectZeroRateCrossing(leftMs, rightMs, isFalling) {
+      let left = leftMs;
+      let right = rightMs;
+      for (let iteration = 0; iteration < 10; iteration++) {
+        const mid = (left + right) / 2;
+        const midRate = getTideRateAt(new Date(mid));
+        if (Math.abs(midRate) < 1e-5) {
+          return mid;
+        }
+        const sameSideAsLeft = isFalling ? (midRate > 0) : (midRate < 0);
+        if (sameSideAsLeft) {
+          left = mid;
+        } else {
+          right = mid;
+        }
+      }
+      return left;
+    }
+
+    function findTideExtrema(startDate, endDate, stepMinutes = 4) {
+      const stepMs = stepMinutes * 60 * 1000;
+      let currentTimestampMs = startDate.getTime();
+      const endTimestampMs = endDate.getTime();
+      const extrema = [];
+      let previousRate = getTideRateAt(new Date(currentTimestampMs));
+
+      while (currentTimestampMs < endTimestampMs) {
+        const nextTimestampMs = currentTimestampMs + stepMs;
+        const nextRate = getTideRateAt(new Date(nextTimestampMs));
+
+        const crossedZero = (previousRate > 0 && nextRate <= 0) || (previousRate < 0 && nextRate >= 0);
+        if (crossedZero) {
+          const isFalling = previousRate > 0;
+          const peakTimestampMs = bisectZeroRateCrossing(currentTimestampMs, nextTimestampMs, isFalling);
+          const peakDate = new Date(peakTimestampMs);
+          extrema.push({
+            type: isFalling ? 'HIGH' : 'LOW',
+            time: peakDate,
+            height: getTideHeightAt(peakDate)
+          });
+        }
+        previousRate = nextRate;
+        currentTimestampMs = nextTimestampMs;
+      }
+      return extrema;
+    }
+
+    function getMoonPhaseNameAndEmoji(phaseFraction) {
+      if (phaseFraction >= 0.03 && phaseFraction < 0.22) {
+        return { name: 'Waxing Crescent', emoji: '\u{1F312}' };
+      }
+      if (phaseFraction >= 0.22 && phaseFraction < 0.28) {
+        return { name: 'First Quarter', emoji: '\u{1F313}' };
+      }
+      if (phaseFraction >= 0.28 && phaseFraction < 0.47) {
+        return { name: 'Waxing Gibbous', emoji: '\u{1F314}' };
+      }
+      if (phaseFraction >= 0.47 && phaseFraction < 0.53) {
+        return { name: 'Full Moon', emoji: '\u{1F315}' };
+      }
+      if (phaseFraction >= 0.53 && phaseFraction < 0.72) {
+        return { name: 'Waning Gibbous', emoji: '\u{1F316}' };
+      }
+      if (phaseFraction >= 0.72 && phaseFraction < 0.78) {
+        return { name: 'Last Quarter', emoji: '\u{1F317}' };
+      }
+      if (phaseFraction >= 0.78 && phaseFraction < 0.97) {
+        return { name: 'Waning Crescent', emoji: '\u{1F318}' };
+      }
+      return { name: 'New Moon', emoji: '\u{1F311}' };
+    }
+
+    function getMoonPhase(date) {
+      const elapsedMs = date.getTime() - REF_NEW_MOON_MS;
+      let phaseFraction = (elapsedMs % SYNODIC_MONTH_MS) / SYNODIC_MONTH_MS;
+      if (phaseFraction < 0) {
+        phaseFraction += 1.0;
+      }
+
+      const illumination = Math.round(((1 - Math.cos(phaseFraction * 2 * Math.PI)) / 2) * 100);
+      const { name, emoji } = getMoonPhaseNameAndEmoji(phaseFraction);
+
+      // Spring tides align with syzygy (New Moon and Full Moon alignments)
+      const distanceToSyzygy = Math.min(
+        Math.abs(phaseFraction - 0.0),
+        Math.abs(phaseFraction - 0.5),
+        Math.abs(phaseFraction - 1.0)
+      );
+      const isSpring = distanceToSyzygy <= 0.12;
+
+      return { phaseFraction, name, emoji, illumination, isSpring };
+    }
+
+    function getWindCardinal(degrees) {
+      const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+      const index = Math.round(((degrees % 360) / 22.5)) % 16;
+      return directions[index];
+    }
+
+    function getBeaufortDetails(kmh) {
+      if (kmh < 1) return { force: 0, name: 'Calm', sport: 'Glassy waters (SUP & Snorkel)' };
+      if (kmh <= 5) return { force: 1, name: 'Light Air', sport: 'Calm & Clear' };
+      if (kmh <= 11) return { force: 2, name: 'Light Breeze', sport: 'Good for Swimming & SUP' };
+      if (kmh <= 19) return { force: 3, name: 'Gentle Breeze', sport: 'Beginner Wing & Foil' };
+      if (kmh <= 28) return { force: 4, name: 'Moderate Breeze', sport: 'Great Kitesurf & Windsurf' };
+      if (kmh <= 38) return { force: 5, name: 'Fresh Breeze', sport: 'Ideal Windsurfing (15-20kt)' };
+      if (kmh <= 49) return { force: 6, name: 'Strong Breeze', sport: 'Advanced Speed Strip Kiting' };
+      if (kmh <= 61) return { force: 7, name: 'Near Gale', sport: 'Rough Seas / Experienced only' };
+      return { force: 8, name: 'Gale Warning', sport: 'Harbor Warning' };
+    }
+
+    function calculateDewPoint(temperatureCelsius, relativeHumidityPercent) {
+      const a = 17.27;
+      const b = 237.7;
+      const alpha = ((a * temperatureCelsius) / (b + temperatureCelsius)) + Math.log(relativeHumidityPercent / 100);
+      return (b * alpha) / (a - alpha);
+    }
+
+    function formatTimeDiff(targetDate, baseDate) {
+      const differenceMs = targetDate.getTime() - baseDate.getTime();
+      const isFuture = differenceMs >= 0;
+      const totalMinutes = Math.round(Math.abs(differenceMs) / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+
+      let formattedDuration = '';
+      if (hours > 0) {
+        formattedDuration += `${hours}h `;
+      }
+      formattedDuration += `${minutes}m`;
+
+      return isFuture ? `in ${formattedDuration}` : `${formattedDuration} ago`;
+    }
+
+    function formatTimeHHMM(date) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    function computeTideSummary(now) {
+      const currentHeight = getTideHeightAt(now);
+      const rate = getTideRateAt(now);
+      const isRising = rate >= 0;
+
+      const start48h = new Date(now.getTime() - 24 * 3600 * 1000);
+      const end48h = new Date(now.getTime() + 24 * 3600 * 1000);
+      const extrema48h = findTideExtrema(start48h, end48h);
+
+      const start7d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const end7d = new Date(start7d.getTime() + 8 * 24 * 3600 * 1000);
+      const extrema7d = findTideExtrema(start7d, end7d);
+
+      const futureExtrema = extrema48h.filter(extremum => extremum.time > now);
+      const nextHigh = futureExtrema.find(extremum => extremum.type === 'HIGH') || null;
+      const nextLow = futureExtrema.find(extremum => extremum.type === 'LOW') || null;
+
+      return { currentHeight, rate, isRising, extrema48h, extrema7d, nextHigh, nextLow };
+    }
+
+    function renderTrendPill(isRising, rate) {
+      const trendPill = document.getElementById('ribbonTrendPill');
+      const trendIcon = document.getElementById('ribbonTrendIcon');
+      const trendText = document.getElementById('ribbonTrendText');
+      const rateMagnitude = Math.abs(rate).toFixed(2);
+
+      if (isRising) {
+        trendPill.className = 'trend-pill rising';
+        trendIcon.textContent = '\u25B2';
+        trendText.textContent = `Rising (+${rateMagnitude} m/h)`;
+      } else {
+        trendPill.className = 'trend-pill falling';
+        trendIcon.textContent = '\u25BC';
+        trendText.textContent = `Falling (-${rateMagnitude} m/h)`;
+      }
+    }
+
+    function renderUpcomingExtremaRibbon(nextHigh, nextLow, now) {
+      if (nextHigh) {
+        document.getElementById('ribbonNextHighHeight').textContent = nextHigh.height.toFixed(2);
+        document.getElementById('ribbonNextHighTime').textContent = 
+          `${formatTimeDiff(nextHigh.time, now)} \u2022 ${formatTimeHHMM(nextHigh.time)}`;
+      }
+      if (nextLow) {
+        document.getElementById('ribbonNextLowHeight').textContent = nextLow.height.toFixed(2);
+        document.getElementById('ribbonNextLowTime').textContent = 
+          `${formatTimeDiff(nextLow.time, now)} \u2022 ${formatTimeHHMM(nextLow.time)}`;
+      }
+    }
+
+    function renderOverviewRibbon(tideSummary, now) {
+      document.getElementById('ribbonCurrentHeight').textContent = tideSummary.currentHeight.toFixed(2);
+      renderTrendPill(tideSummary.isRising, tideSummary.rate);
+      renderUpcomingExtremaRibbon(tideSummary.nextHigh, tideSummary.nextLow, now);
+
+      const heights48 = tideSummary.extrema48h.map(extremum => extremum.height);
+      if (heights48.length > 0) {
+        const minHeight = Math.min(...heights48);
+        const maxHeight = Math.max(...heights48);
+        const rangeSummaryElement = document.getElementById('curveRangeSummary');
+        rangeSummaryElement.textContent = `${(maxHeight - minHeight).toFixed(2)} m (min ${minHeight.toFixed(2)}m \u2192 max ${maxHeight.toFixed(2)}m)`;
+      }
+
+      const moon = getMoonPhase(now);
+      document.getElementById('ribbonMoonEmoji').textContent = moon.emoji;
+      document.getElementById('ribbonMoonName').textContent = `${moon.name} (${moon.illumination}%)`;
+      document.getElementById('ribbonRegimeSub').textContent = moon.isSpring ? 
+        'Spring Tide (Strong Exchange)' : 'Neap Tide (Moderate Exchange)';
+    }
+
+    function updateTideModel() {
+      state.now = new Date();
+      const tideSummary = computeTideSummary(state.now);
+      Object.assign(state.tide, tideSummary);
+      renderOverviewRibbon(tideSummary, state.now);
+      renderActiveTab();
+    }
+
+    async function requestMarineWeatherPayloads(latitude, longitude) {
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+      const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${latitude}&longitude=${longitude}&current=sea_surface_temperature,wave_height,wave_period`;
+
+      const [weatherResponseResult, marineResponseResult] = await Promise.allSettled([
+        fetch(weatherUrl),
+        fetch(marineUrl)
+      ]);
+
+      let weatherPayload = null;
+      let marinePayload = null;
+
+      if (weatherResponseResult.status === 'fulfilled' && weatherResponseResult.value.ok) {
+        weatherPayload = await weatherResponseResult.value.json();
+      }
+      if (marineResponseResult.status === 'fulfilled' && marineResponseResult.value.ok) {
+        marinePayload = await marineResponseResult.value.json();
+      }
+
+      return { weatherPayload, marinePayload };
+    }
+
+    function applyWeatherPayloads(weatherPayload, marinePayload) {
+      let receivedValidData = false;
+
+      if (weatherPayload && weatherPayload.current) {
+        const current = weatherPayload.current;
+        if (typeof current.temperature_2m === 'number') state.weather.airTemp = current.temperature_2m;
+        if (typeof current.relative_humidity_2m === 'number') state.weather.humidity = current.relative_humidity_2m;
+        if (typeof current.wind_speed_10m === 'number') state.weather.windSpeed = current.wind_speed_10m;
+        if (typeof current.wind_direction_10m === 'number') state.weather.windDir = current.wind_direction_10m;
+        if (typeof current.wind_gusts_10m === 'number') state.weather.windGusts = current.wind_gusts_10m;
+
+        if (weatherPayload.daily && Array.isArray(weatherPayload.daily.temperature_2m_max) && weatherPayload.daily.temperature_2m_max.length > 0) {
+          state.weather.tempMax = weatherPayload.daily.temperature_2m_max[0];
+          state.weather.tempMin = weatherPayload.daily.temperature_2m_min[0];
+        }
+        receivedValidData = true;
+      }
+
+      if (marinePayload && marinePayload.current) {
+        const marineCurrent = marinePayload.current;
+        if (typeof marineCurrent.sea_surface_temperature === 'number') state.weather.seaTemp = marineCurrent.sea_surface_temperature;
+        if (typeof marineCurrent.wave_height === 'number') state.weather.waveHeight = marineCurrent.wave_height;
+        if (typeof marineCurrent.wave_period === 'number') state.weather.wavePeriod = marineCurrent.wave_period;
+      }
+
+      return receivedValidData;
+    }
+
+    function renderConnectionStatus(isOnline) {
+      const statusDot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+      if (isOnline) {
+        statusDot.className = 'status-dot';
+        statusText.textContent = 'Live Synced';
+      } else {
+        statusDot.className = 'status-dot offline';
+        statusText.textContent = 'Offline Mode';
+      }
+    }
+
+    async function fetchMarineWeather() {
+      const refreshBtn = document.getElementById('refreshBtn');
+      refreshBtn.classList.add('spinning');
+      document.getElementById('statusText').textContent = 'Updating...';
+
+      const latitude = 28.5097;
+      const longitude = 34.5136;
+
+      try {
+        const { weatherPayload, marinePayload } = await requestMarineWeatherPayloads(latitude, longitude);
+        const hasData = applyWeatherPayloads(weatherPayload, marinePayload);
+        if (!hasData) {
+          throw new Error('Open-Meteo payloads missing expected readings');
+        }
+        state.isOnline = true;
+      } catch (networkError) {
+        console.warn('Marine weather fetch failed. Continuing in offline mode:', networkError);
+        state.isOnline = false;
+      } finally {
+        renderConnectionStatus(state.isOnline);
+        state.lastUpdated = new Date();
+        document.getElementById('lastUpdatedTimestamp').textContent = 
+          state.lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        renderMeteoCards();
+        updateTideModel();
+
+        setTimeout(() => {
+          refreshBtn.classList.remove('spinning');
+        }, 500);
+      }
+    }
+
+    function renderWindCard(weather) {
+      if (weather.windSpeed === null) return;
+      document.getElementById('windSpeedVal').textContent = weather.windSpeed.toFixed(1);
+      const directionDegrees = weather.windDir || 0;
+      const cardinalDirection = getWindCardinal(directionDegrees);
+      document.getElementById('windDirText').textContent = `${cardinalDirection} \u2022 ${Math.round(directionDegrees)}\u00B0`;
+
+      const needle = document.getElementById('compassNeedle');
+      needle.style.transform = `rotate(${directionDegrees}deg)`;
+
+      const beaufort = getBeaufortDetails(weather.windSpeed);
+      document.getElementById('beaufortText').textContent = `Force ${beaufort.force} \u2022 ${beaufort.name}`;
+      document.getElementById('windSportSuitability').textContent = beaufort.sport;
+
+      if (weather.windGusts !== null) {
+        document.getElementById('windGustVal').textContent = `${weather.windGusts.toFixed(1)} km/h`;
+      }
+    }
+
+    function renderAirTemperatureCard(weather) {
+      if (weather.airTemp === null) return;
+      document.getElementById('airTempVal').textContent = weather.airTemp.toFixed(1);
+      if (weather.tempMin !== null && weather.tempMax !== null) {
+        document.getElementById('tempDailyBounds').textContent = 
+          `Today's bounds: Min ${weather.tempMin.toFixed(1)}\u00B0C \u2022 Max ${weather.tempMax.toFixed(1)}\u00B0C`;
+      }
+    }
+
+    function renderSeaConditionsCard(weather) {
+      if (weather.seaTemp !== null) {
+        document.getElementById('seaTempVal').textContent = weather.seaTemp.toFixed(1);
+        let suit = '5mm Full Wetsuit';
+        if (weather.seaTemp >= 25) suit = 'Skin / 2mm Shorty';
+        else if (weather.seaTemp >= 22) suit = '3mm Full Wetsuit';
+        document.getElementById('wetsuitRecommendation').textContent = suit;
+      }
+      if (weather.waveHeight !== null) {
+        document.getElementById('waveHeightVal').textContent = `${weather.waveHeight.toFixed(2)} m`;
+      }
+      if (weather.wavePeriod !== null) {
+        document.getElementById('wavePeriodVal').textContent = `${weather.wavePeriod.toFixed(1)} s`;
+      }
+    }
+
+    function renderHumidityCard(weather) {
+      if (weather.humidity === null) return;
+      document.getElementById('humidityVal').textContent = Math.round(weather.humidity);
+
+      const estimatedAirTemp = weather.airTemp || 28;
+      const dewPoint = calculateDewPoint(estimatedAirTemp, weather.humidity);
+      document.getElementById('dewPointDesc').textContent = `Estimated Dew Point: ${dewPoint.toFixed(1)}\u00B0C`;
+
+      let drynessDescription = 'Humid Maritime Air';
+      if (weather.humidity < 35) drynessDescription = 'Dry & Crisp Sinai Air';
+      else if (weather.humidity < 60) drynessDescription = 'Pleasant Coastal Humidity';
+      document.getElementById('airDrynessVal').textContent = drynessDescription;
+    }
+
+    function renderMeteoCards() {
+      const weather = state.weather;
+      renderWindCard(weather);
+      renderAirTemperatureCard(weather);
+      renderSeaConditionsCard(weather);
+      renderHumidityCard(weather);
+    }
+
+    function resizeCanvas(canvas, container) {
+      const boundingClientRect = container.getBoundingClientRect();
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      canvas.width = boundingClientRect.width * devicePixelRatio;
+      canvas.height = boundingClientRect.height * devicePixelRatio;
+    }
+
+    function initTideCurveCanvas() {
+      const canvas = document.getElementById('tideCurveCanvas');
+      const wrap = document.getElementById('canvasWrap');
+
+      function resize() {
+        resizeCanvas(canvas, wrap);
+        drawTideCurve();
+      }
+
+      if (window.ResizeObserver) {
+        const resizeObserver = new ResizeObserver(resize);
+        resizeObserver.observe(wrap);
+      } else {
+        window.addEventListener('resize', resize);
+      }
+
+      function trackScrubberMovement(pointerEvent) {
+        const boundingClientRect = canvas.getBoundingClientRect();
+        const clientX = pointerEvent.clientX || (pointerEvent.touches && pointerEvent.touches[0].clientX);
+        if (clientX === undefined) return;
+
+        const xCoordinate = clientX - boundingClientRect.left;
+        if (xCoordinate < 0 || xCoordinate > boundingClientRect.width) {
+          hideScrubber();
+          return;
+        }
+        showScrubberAt(xCoordinate, boundingClientRect.width);
+      }
+
+      canvas.addEventListener('mousemove', trackScrubberMovement);
+      canvas.addEventListener('touchmove', trackScrubberMovement, { passive: true });
+      canvas.addEventListener('mouseleave', hideScrubber);
+      canvas.addEventListener('touchend', hideScrubber);
+
+      resize();
+    }
+
+    function hideScrubber() {
+      const tooltip = document.getElementById('scrubberTooltip');
+      tooltip.classList.remove('visible');
+      drawTideCurve();
+    }
+
+    function showScrubberAt(xCoordinate, canvasWidth) {
+      const now = state.now;
+      const startMs = now.getTime() - 24 * 3600 * 1000;
+      const spanMs = 48 * 3600 * 1000;
+
+      const cursorTimeMs = startMs + (xCoordinate / canvasWidth) * spanMs;
+      const cursorDate = new Date(cursorTimeMs);
+      const height = getTideHeightAt(cursorDate);
+      const rate = getTideRateAt(cursorDate);
+
+      const tooltip = document.getElementById('scrubberTooltip');
+      tooltip.classList.add('visible');
+      tooltip.style.left = `${Math.max(80, Math.min(canvasWidth - 80, xCoordinate))}px`;
+
+      document.getElementById('tooltipTime').textContent = 
+        `${cursorDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} \u2022 ${formatTimeHHMM(cursorDate)}`;
+      document.getElementById('tooltipHeightVal').textContent = height.toFixed(2);
+
+      const isRising = rate >= 0;
+      const trendIcon = isRising ? '\u25B2' : '\u25BC';
+      const trendWord = isRising ? 'Rising' : 'Falling';
+      const diffText = formatTimeDiff(cursorDate, now);
+
+      document.getElementById('tooltipSub').textContent = 
+        `${trendIcon} ${trendWord} (${isRising ? '+' : ''}${rate.toFixed(2)} m/h) \u2022 ${diffText}`;
+
+      drawTideCurve(xCoordinate);
+    }
+
+    function drawHorizontalGrid(chartContext) {
+      const { ctx, width, heightToY, isDark, colors } = chartContext;
+      ctx.lineWidth = 1;
+      ctx.font = '10px monospace';
+      ctx.fillStyle = colors.text;
+      ctx.textAlign = 'left';
+
+      for (let level = 0.20; level <= 1.05; level += 0.20) {
+        const y = heightToY(level);
+        ctx.strokeStyle = colors.grid;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(35, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+        ctx.fillText(`${level.toFixed(1)}m`, 6, y + 3);
+      }
+
+      const mslY = heightToY(MEAN_SEA_LEVEL);
+      ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.5)' : 'rgba(13, 148, 136, 0.6)';
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(35, mslY);
+      ctx.lineTo(width, mslY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.textAlign = 'right';
+      ctx.fillText('MSL 0.58m', width - 8, mslY - 4);
+    }
+
+    function drawTimeGrid(chartContext) {
+      const { ctx, width, height, startMs, spanMs, timestampToX, isDark, colors } = chartContext;
+      ctx.textAlign = 'center';
+      const sampleDate = new Date(startMs);
+      sampleDate.setMinutes(0, 0, 0);
+
+      while (sampleDate.getTime() <= startMs + spanMs) {
+        const tMs = sampleDate.getTime();
+        const x = timestampToX(tMs);
+        const hours = sampleDate.getHours();
+
+        if (x >= 0 && x <= width) {
+          ctx.strokeStyle = (hours === 0) ? 
+            (isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(15, 23, 42, 0.2)') : colors.grid;
+          ctx.setLineDash((hours === 0) ? [] : [2, 4]);
+          ctx.beginPath();
+          ctx.moveTo(x, 15);
+          ctx.lineTo(x, height - 20);
+          ctx.stroke();
+
+          ctx.setLineDash([]);
+          ctx.fillStyle = (hours === 0) ? (isDark ? '#f1f5f9' : '#0f172a') : colors.text;
+          ctx.fillText(`${String(hours).padStart(2, '0')}:00`, x, height - 6);
+
+          if (hours === 0) {
+            const dayStr = sampleDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+            ctx.fillText(dayStr, x, 24);
+          }
+        }
+        sampleDate.setHours(sampleDate.getHours() + 6);
+      }
+    }
+
+    function drawTideWave(chartContext) {
+      const { ctx, height, paddingY, startMs, spanMs, timestampToX, heightToY, isDark, colors } = chartContext;
+      const samples = 480;
+      const points = [];
+      for (let i = 0; i <= samples; i++) {
+        const tMs = startMs + (i / samples) * spanMs;
+        const waterHeight = getTideHeightAt(new Date(tMs));
+        points.push({
+          x: timestampToX(tMs),
+          y: heightToY(waterHeight)
+        });
+      }
+
+      const gradFill = ctx.createLinearGradient(0, paddingY, 0, height - paddingY);
+      gradFill.addColorStop(0, isDark ? 'rgba(0, 240, 255, 0.32)' : 'rgba(2, 132, 199, 0.25)');
+      gradFill.addColorStop(1, isDark ? 'rgba(0, 240, 255, 0.01)' : 'rgba(2, 132, 199, 0.01)');
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, height - paddingY);
+      for (let i = 0; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.lineTo(points[points.length - 1].x, height - paddingY);
+      ctx.closePath();
+      ctx.fillStyle = gradFill;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.strokeStyle = colors.wave;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = colors.wave;
+      ctx.shadowBlur = isDark ? 8 : 2;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    function drawNowMarker(chartContext, nowTimestampMs, currentHeight) {
+      const { ctx, height, heightToY, timestampToX, isDark, colors } = chartContext;
+      const nowX = timestampToX(nowTimestampMs);
+      const nowY = heightToY(currentHeight);
+
+      ctx.strokeStyle = colors.now;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 3]);
+      ctx.beginPath();
+      ctx.moveTo(nowX, 15);
+      ctx.lineTo(nowX, height - 20);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = colors.now;
+      ctx.beginPath();
+      ctx.roundRect(nowX - 28, 12, 56, 18, 4);
+      ctx.fill();
+      ctx.fillStyle = '#070e1c';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('NOW', nowX, 25);
+
+      ctx.beginPath();
+      ctx.arc(nowX, nowY, 8, 0, Math.PI * 2);
+      ctx.fillStyle = isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(217, 119, 6, 0.3)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(nowX, nowY, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = colors.now;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    function drawExtremaMarkers(chartContext, extrema) {
+      const { ctx, width, timestampToX, heightToY, isDark, colors } = chartContext;
+      extrema.forEach(extremum => {
+        const x = timestampToX(extremum.time.getTime());
+        const y = heightToY(extremum.height);
+
+        if (x > 20 && x < width - 20) {
+          const isHigh = extremum.type === 'HIGH';
+          const badgeColor = isHigh ? (isDark ? '#00e5b7' : '#0d9488') : (isDark ? '#38bdf8' : '#2563eb');
+
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = badgeColor;
+          ctx.fill();
+          ctx.strokeStyle = '#070e1c';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          ctx.font = 'bold 10px sans-serif';
+          ctx.textAlign = 'center';
+          const symbol = isHigh ? '\u25B2' : '\u25BC';
+          const yOffset = isHigh ? -14 : 14;
+          const timeYOffset = isHigh ? -4 : 24;
+
+          ctx.fillStyle = badgeColor;
+          ctx.fillText(`${symbol} ${extremum.height.toFixed(2)}m`, x, y + yOffset);
+          ctx.fillStyle = colors.text;
+          ctx.font = '9px monospace';
+          ctx.fillText(formatTimeHHMM(extremum.time), x, y + timeYOffset);
+        }
+      });
+    }
+
+    function drawScrubberCursor(chartContext, scrubberX) {
+      const { ctx, height, startMs, spanMs, heightToY, width, isDark, colors } = chartContext;
+      if (scrubberX === null || scrubberX < 0 || scrubberX > width) return;
+
+      ctx.strokeStyle = isDark ? '#ffffff' : '#0f172a';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(scrubberX, 15);
+      ctx.lineTo(scrubberX, height - 20);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const cursorTimeMs = startMs + (scrubberX / width) * spanMs;
+      const cursorHeight = getTideHeightAt(new Date(cursorTimeMs));
+      const cursorY = heightToY(cursorHeight);
+
+      ctx.beginPath();
+      ctx.arc(scrubberX, cursorY, 5, 0, Math.PI * 2);
+      ctx.fillStyle = isDark ? '#ffffff' : '#0f172a';
+      ctx.fill();
+      ctx.strokeStyle = colors.wave;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function drawTideCurve(scrubberX = null) {
+      const canvas = document.getElementById('tideCurveCanvas');
+      const ctx = canvas.getContext('2d');
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      const width = canvas.width / devicePixelRatio;
+      const height = canvas.height / devicePixelRatio;
+
+      ctx.save();
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+      ctx.clearRect(0, 0, width, height);
+
+      const now = state.now;
+      const startMs = now.getTime() - 24 * 3600 * 1000;
+      const spanMs = 48 * 3600 * 1000;
+
+      const minHeight = 0.10;
+      const maxHeight = 1.15;
+      const paddingY = 40;
+      const chartHeight = height - paddingY * 2;
+
+      const heightToY = (h) => height - paddingY - ((h - minHeight) / (maxHeight - minHeight)) * chartHeight;
+      const timestampToX = (tMs) => ((tMs - startMs) / spanMs) * width;
+
+      const isDark = state.theme === 'dark';
+      const chartContext = {
+        ctx,
+        width,
+        height,
+        paddingY,
+        startMs,
+        spanMs,
+        heightToY,
+        timestampToX,
+        isDark,
+        colors: {
+          grid: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.08)',
+          text: isDark ? '#94a3b8' : '#64748b',
+          wave: isDark ? '#00f0ff' : '#0284c7',
+          now: isDark ? '#f59e0b' : '#d97706'
+        }
+      };
+
+      drawHorizontalGrid(chartContext);
+      drawTimeGrid(chartContext);
+      drawTideWave(chartContext);
+      drawNowMarker(chartContext, now.getTime(), state.tide.currentHeight);
+      drawExtremaMarkers(chartContext, state.tide.extrema48h);
+      drawScrubberCursor(chartContext, scrubberX);
+
+      ctx.restore();
+    }
+
+    function determineTideRegime(dailyRange) {
+      if (dailyRange >= 0.65) {
+        return { regimeClass: 'spring', regimeLabel: 'Spring Tide (Strong)' };
+      }
+      if (dailyRange <= 0.45) {
+        return { regimeClass: 'neap', regimeLabel: 'Neap Tide (Gentle)' };
+      }
+      return { regimeClass: 'moderate', regimeLabel: 'Moderate Tide' };
+    }
+
+    function createDayEventsHtml(dayExtrema) {
+      return dayExtrema.map(extremum => {
+        const isHigh = extremum.type === 'HIGH';
+        const icon = isHigh ? '\u25B2' : '\u25BC';
+        const typeLabel = isHigh ? 'High Tide' : 'Low Tide';
+        const typeClass = isHigh ? 'high' : 'low';
+
+        return `
+          <div class="day-event-item">
+            <div class="event-type-wrap ${typeClass}">
+              <span>${icon}</span>
+              <span>${typeLabel}</span>
+            </div>
+            <div class="event-time">${formatTimeHHMM(extremum.time)}</div>
+            <div class="event-height">${extremum.height.toFixed(2)} m</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function createDayOutlookCard(dayOffset, now) {
+      const targetDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayOffset, 0, 0, 0);
+      const nextDay = new Date(targetDay.getTime() + 24 * 3600 * 1000);
+      const isToday = (dayOffset === 0);
+
+      const dayExtrema = findTideExtrema(targetDay, nextDay);
+      const moon = getMoonPhase(new Date(targetDay.getTime() + 12 * 3600 * 1000));
+
+      const heights = dayExtrema.map(extremum => extremum.height);
+      const minHeight = heights.length ? Math.min(...heights) : 0.3;
+      const maxHeight = heights.length ? Math.max(...heights) : 0.9;
+      const dailyRange = maxHeight - minHeight;
+      const { regimeClass, regimeLabel } = determineTideRegime(dailyRange);
+
+      const dayNameStr = isToday ? 'Today' : targetDay.toLocaleDateString([], { weekday: 'long' });
+      const dateStr = targetDay.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+      const card = document.createElement('div');
+      card.className = `day-card ${isToday ? 'is-today' : ''}`;
+      card.innerHTML = `
+        <div>
+          <div class="day-card-header">
+            <div class="day-title-wrap">
+              <div class="day-name">${dayNameStr}</div>
+              <div class="day-date">${dateStr}</div>
+            </div>
+            ${isToday ? '<span class="today-tag">TODAY</span>' : ''}
+          </div>
+
+          <div class="moon-phase-row">
+            <div class="moon-phase-icon">${moon.emoji}</div>
+            <div class="moon-phase-text">
+              <strong>${moon.name}</strong> &bull; ${moon.illumination}%
+            </div>
+            <span class="tide-regime-badge ${regimeClass}">${regimeLabel}</span>
+          </div>
+
+          <div class="day-events-list">
+            ${createDayEventsHtml(dayExtrema)}
+          </div>
+        </div>
+
+        <div class="day-range-summary">
+          <span>Daily Range: <strong>${dailyRange.toFixed(2)}m</strong></span>
+          <span>Min: ${minHeight.toFixed(2)}m &bull; Max: ${maxHeight.toFixed(2)}m</span>
+        </div>
+      `;
+
+      card.addEventListener('click', () => {
+        showDayDetail(targetDay, dayNameStr, dateStr);
+      });
+
+      return card;
+    }
+
+    function render7DayOutlook() {
+      const container = document.getElementById('outlookGrid');
+      container.innerHTML = '';
+      const now = state.now;
+
+      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const card = createDayOutlookCard(dayOffset, now);
+        container.appendChild(card);
+      }
+    }
+
+    function createHourlyDetailRowHtml(dayDate, hour) {
+      const sampleTime = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), hour, 0, 0);
+      const height = getTideHeightAt(sampleTime);
+      const rate = getTideRateAt(sampleTime);
+      const isRising = rate >= 0;
+      const fillPercentage = Math.max(0, Math.min(100, Math.round(((height - 0.2) / 0.85) * 100)));
+
+      return `
+        <tr style="border-bottom: 1px solid var(--border-subtle);">
+          <td style="padding: 0.4rem; font-family: monospace;">${String(hour).padStart(2, '0')}:00</td>
+          <td style="padding: 0.4rem; font-weight: 700;">${height.toFixed(2)} m</td>
+          <td style="padding: 0.4rem; color: ${isRising ? 'var(--accent-teal)' : 'var(--accent-blue)'};">
+            ${isRising ? '\u25B2 Rising' : '\u25BC Falling'}
+          </td>
+          <td style="padding: 0.4rem; font-family: monospace;">${(rate >= 0 ? '+' : '') + rate.toFixed(2)} m/h</td>
+          <td style="padding: 0.4rem;">
+            <div style="background: var(--bg-surface); height: 8px; width: 120px; border-radius: 4px; overflow: hidden;">
+              <div style="height: 100%; width: ${fillPercentage}%; background: var(--accent-cyan); border-radius: 4px;"></div>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
+    function showDayDetail(dayDate, dayName, dateStr) {
+      const panel = document.getElementById('dayDetailPanel');
+      const title = document.getElementById('detailDayTitle');
+      const table = document.getElementById('detailHourlyTable');
+
+      title.textContent = `Hourly Tide Profile: ${dayName} (${dateStr})`;
+      panel.style.display = 'block';
+
+      let rowsHtml = `
+        <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary);">
+          <th style="padding: 0.5rem;">Hour</th>
+          <th style="padding: 0.5rem;">Height (m)</th>
+          <th style="padding: 0.5rem;">State</th>
+          <th style="padding: 0.5rem;">Rate</th>
+          <th style="padding: 0.5rem;">Level Bar</th>
+        </tr>
+      `;
+
+      for (let hour = 0; hour < 24; hour++) {
+        rowsHtml += createHourlyDetailRowHtml(dayDate, hour);
+      }
+
+      table.innerHTML = rowsHtml;
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function calculateDialNeedleAngle(now, pastExtrema, futureExtrema, isRising) {
+      const lastTurn = pastExtrema.length ? pastExtrema[pastExtrema.length - 1] : null;
+      const nextTurn = futureExtrema.length ? futureExtrema[0] : null;
+
+      if (!lastTurn || !nextTurn) {
+        return isRising ? 270 : 90;
+      }
+
+      const totalSpan = nextTurn.time.getTime() - lastTurn.time.getTime();
+      const elapsed = now.getTime() - lastTurn.time.getTime();
+      const progress = Math.max(0, Math.min(1, elapsed / totalSpan));
+
+      return (lastTurn.type === 'HIGH') ? (progress * 180) : (180 + progress * 180);
+    }
+
+    function updateDialTwelfthsIndicator(progress) {
+      const activeHour = Math.min(6, Math.max(1, Math.ceil(progress * 6)));
+      for (let hour = 1; hour <= 6; hour++) {
+        const box = document.getElementById(`twelfth-${hour}`);
+        if (box) {
+          box.className = (hour === activeHour) ? 'twelfth-box active' : 'twelfth-box';
+        }
+      }
+    }
+
+    function renderCircularDial() {
+      const now = state.now;
+      const currentHeight = state.tide.currentHeight;
+      const rate = state.tide.rate;
+      const isRising = state.tide.isRising;
+
+      document.getElementById('dialCenterHeight').textContent = currentHeight.toFixed(2);
+      const trendText = document.getElementById('dialCenterTrend');
+      trendText.textContent = isRising ? 'RISING (FLOOD)' : 'FALLING (EBB)';
+      trendText.setAttribute('fill', isRising ? '#00e5b7' : '#38bdf8');
+
+      const recentExtrema = state.tide.extrema48h;
+      const pastExtrema = recentExtrema.filter(extremum => extremum.time <= now);
+      const futureExtrema = recentExtrema.filter(extremum => extremum.time > now);
+
+      const angleDegrees = calculateDialNeedleAngle(now, pastExtrema, futureExtrema, isRising);
+      const needleGroup = document.getElementById('dialNeedleGroup');
+      needleGroup.style.transform = `rotate(${angleDegrees.toFixed(1)}deg)`;
+      needleGroup.style.transformOrigin = '200px 200px';
+      needleGroup.setAttribute('transform', `rotate(${angleDegrees.toFixed(1)}, 200, 200)`);
+
+      const lowHeight = state.tide.nextLow ? state.tide.nextLow.height : 0.30;
+      const highHeight = state.tide.nextHigh ? state.tide.nextHigh.height : 0.90;
+      const actualMin = Math.min(lowHeight, highHeight);
+      const actualMax = Math.max(lowHeight, highHeight);
+      const percentage = Math.max(0, Math.min(100, Math.round(((currentHeight - actualMin) / (actualMax - actualMin)) * 100)));
+
+      document.getElementById('dialPercentVal').textContent = `${percentage}%`;
+      document.getElementById('dialRangeBounds').textContent = `Low ${actualMin.toFixed(2)}m \u2192 High ${actualMax.toFixed(2)}m`;
+      document.getElementById('dialRangeFill').style.width = `${percentage}%`;
+
+      if (state.tide.nextHigh) {
+        document.getElementById('dialNextHigh').textContent = 
+          `${formatTimeDiff(state.tide.nextHigh.time, now)} (${state.tide.nextHigh.height.toFixed(2)}m @ ${formatTimeHHMM(state.tide.nextHigh.time)})`;
+      }
+      if (state.tide.nextLow) {
+        document.getElementById('dialNextLow').textContent = 
+          `${formatTimeDiff(state.tide.nextLow.time, now)} (${state.tide.nextLow.height.toFixed(2)}m @ ${formatTimeHHMM(state.tide.nextLow.time)})`;
+      }
+
+      document.getElementById('dialVelocity').textContent = `${(rate >= 0 ? '+' : '') + rate.toFixed(2)} m/hour`;
+
+      const lastTurn = pastExtrema.length ? pastExtrema[pastExtrema.length - 1] : null;
+      const nextTurn = futureExtrema.length ? futureExtrema[0] : null;
+      if (lastTurn && nextTurn) {
+        const totalSpan = nextTurn.time.getTime() - lastTurn.time.getTime();
+        const elapsed = now.getTime() - lastTurn.time.getTime();
+        const progress = Math.max(0, Math.min(1, elapsed / totalSpan));
+        updateDialTwelfthsIndicator(progress);
+      }
+    }
+
+    function injectDialTicks() {
+      const group = document.getElementById('dialTicksGroup');
+      if (group.children.length > 0) return;
+
+      let ticksSvg = '';
+      for (let i = 0; i < 24; i++) {
+        const angle = i * 15;
+        const rad = (angle - 90) * (Math.PI / 180);
+        const r1 = 175;
+        const r2 = (i % 2 === 0) ? 162 : 168;
+        const x1 = 200 + r1 * Math.cos(rad);
+        const y1 = 200 + r1 * Math.sin(rad);
+        const x2 = 200 + r2 * Math.cos(rad);
+        const y2 = 200 + r2 * Math.sin(rad);
+
+        ticksSvg += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${(i % 6 === 0) ? 'rgba(0, 240, 255, 0.7)' : 'rgba(255, 255, 255, 0.25)'}" stroke-width="${(i % 6 === 0) ? '2.5' : '1.2'}"/>`;
+      }
+      group.innerHTML = ticksSvg;
+    }
+
+    function setupTabs() {
+      const tabConfigs = [
+        { btn: document.getElementById('tabBtn1'), pane: document.getElementById('pane1'), id: '1' },
+        { btn: document.getElementById('tabBtn2'), pane: document.getElementById('pane2'), id: '2' },
+        { btn: document.getElementById('tabBtn3'), pane: document.getElementById('pane3'), id: '3' }
+      ];
+
+      tabConfigs.forEach(tabConfig => {
+        tabConfig.btn.addEventListener('click', () => {
+          tabConfigs.forEach(otherTab => {
+            otherTab.btn.classList.remove('active');
+            otherTab.btn.setAttribute('aria-selected', 'false');
+            otherTab.pane.classList.remove('active');
+          });
+
+          tabConfig.btn.classList.add('active');
+          tabConfig.btn.setAttribute('aria-selected', 'true');
+          tabConfig.pane.classList.add('active');
+          state.activeTab = tabConfig.id;
+
+          renderActiveTab();
+        });
+      });
+    }
+
+    function renderActiveTab() {
+      if (state.activeTab === '1') {
+        const wrap = document.getElementById('canvasWrap');
+        const canvas = document.getElementById('tideCurveCanvas');
+        const boundingClientRect = wrap.getBoundingClientRect();
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        if (boundingClientRect.width > 0 && boundingClientRect.height > 0) {
+          canvas.width = boundingClientRect.width * devicePixelRatio;
+          canvas.height = boundingClientRect.height * devicePixelRatio;
+        }
+        drawTideCurve();
+      } else if (state.activeTab === '2') {
+        render7DayOutlook();
+      } else if (state.activeTab === '3') {
+        renderCircularDial();
+      }
+    }
+
+    function setupTheme() {
+      const savedTheme = localStorage.getItem('dahab_tide_theme') || 'dark';
+      applyTheme(savedTheme);
+
+      document.getElementById('themeToggleBtn').addEventListener('click', () => {
+        const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
+        applyTheme(nextTheme);
+      });
+    }
+
+    function applyTheme(theme) {
+      state.theme = theme;
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('dahab_tide_theme', theme);
+
+      const icon = document.getElementById('themeIcon');
+      const text = document.getElementById('themeBtnText');
+
+      if (theme === 'light') {
+        text.textContent = 'Marine';
+        icon.innerHTML = `
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        `;
+      } else {
+        text.textContent = 'Coastal';
+        icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+      }
+
+      drawTideCurve();
+    }
+
+    function updateLiveClock() {
+      const now = new Date();
+      document.getElementById('liveClockDisplay').textContent = 
+        now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('liveDateDisplay').textContent = 
+        now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function startLiveClock() {
+      updateLiveClock();
+      setInterval(updateLiveClock, 1000);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      startLiveClock();
+      setupTheme();
+      setupTabs();
+      injectDialTicks();
+      initTideCurveCanvas();
+
+      document.getElementById('closeDetailBtn').addEventListener('click', () => {
+        document.getElementById('dayDetailPanel').style.display = 'none';
+      });
+
+      document.getElementById('refreshBtn').addEventListener('click', () => {
+        fetchMarineWeather();
+      });
+
+      updateTideModel();
+      fetchMarineWeather();
+
+      setInterval(updateTideModel, 60000);
+    });
+  </script>
+</body>
+</html>

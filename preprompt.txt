@@ -1,0 +1,15 @@
+```
+> Build a tideforecast for dahab as a single self-contained HTML file.
+  No build step, no CDN, no dependencies. It must run by double-clicking the file.
+
+  Features:
+  - Live tide chart
+  - Live temp.
+  - Live wind speed and direction
+  - use https://github.com/public-apis/public-apis to connect to free api service
+  
+  It should look clean and deliberate, not like a default demo.
+
+  When you are done, verify your own work before handing it back. Tell me what you
+  checked, what you fixed, and what you know is still wrong.
+```
